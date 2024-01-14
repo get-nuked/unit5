@@ -10,14 +10,45 @@ session_start();
     //something was posted
     $user_name = $_POST["user_name"];
     $password = $_POST["password"];
+    $repassword = $_POST["repassword"];
+    $first = $_POST["firstname"];
+    $last = $_POST["lastname"];
+    $phone = $_POST["phone"];
+    
 
     if(!empty($user_name) && !empty($password))
     {
         //save to database
-        $user_id = random_num(20);
-        $query = "insert into users (user_id,user_name,password) values ('$user_id','$user_name','$password')";
-        mysqli_query($con, $query);
-        header("Location: Home.php");
+        $empty = "";
+        $query = "select * from logindetails where user_name = '$user_name'";
+        $result = mysqli_query($con, $query);
+        while($row = $result->fetch_assoc()) {
+          $empty = $row['user_name'];
+        }     
+        if ($empty == "" && $password = $repassword){
+          $query = "insert into logindetails (user_name, password, Admin) values ('$user_name','$password', 0)";
+          mysqli_query($con, $query);
+          $query = "select id from logindetails where user_name = '$user_name'";
+          $result = mysqli_query($con, $query);
+          while($row = $result->fetch_assoc()) {
+            $user_id = $row['id'];
+          }     
+          $query = "insert into customerdetails (CustomerID, FirstName, LastName, Phone) values ('$user_id','$first','$last' ,'$phone')";
+          mysqli_query($con, $query);
+          header("Location: Login.php");
+        }
+
+        if($password !== $repassword){
+          // header("Location: Signup.php");
+          echo "<div class = 'error'><p> passwords do not match. </p></div>";
+        }
+
+        if($empty !== ""){
+          // header("Location: Signup.php");
+          echo "<div class = 'error'><p> account exists. </p></div>";
+        }
+
+
         die;
 
     } else
@@ -31,12 +62,12 @@ session_start();
 <html>
 <head>
 
+<link rel="stylesheet" href="https://use.typekit.net/oov2wcw.css">
 <style>
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
   color: #191923
-  
 }
 
 
@@ -46,7 +77,6 @@ body {
   background-color: wheat;
   height: 70%;
   width: 86%;
-  padding: 50px;
   overflow: hidden;
   position:absolute; 
   top: 40%;
@@ -59,7 +89,7 @@ body {
 
 .container:hover {
   height: 70%;
-  width: 87%;
+  width: 86.5%;
 }
 
 body {
@@ -83,7 +113,7 @@ body {
     }
 }
 
-.name {
+.firstname {
   height:20px;
   width: 400px;
   position: relative; 
@@ -92,11 +122,20 @@ body {
   transform: translate(-50%,-50%);
 }
 
+.lastname {
+  height:20px;
+  width: 400px;
+  position: relative; 
+  top: 38%;
+  left: 37%;
+  transform: translate(-50%,-50%);
+}
+
 .phone {
   height:20px;
   width: 400px;
   position: relative; 
-  top: 40%;
+  top: 42%;
   left: 37%;
   transform: translate(-50%,-50%)
 }
@@ -113,17 +152,27 @@ body {
 input[type=text] {
   background-color: wheat;
   color: black;
-  font-family: "Lucida Console", monospace;
+  font-family: century-gothic, sans-serif;
   font-size: 18px;
   width:450px;
   height: 35px;
+  border-radius: 5px;
 }
 
 .password {
   height:20px;
   width: 400px;
   position: relative; 
-  top: 52%;
+  top: 50%;
+  left: 37%;
+  transform: translate(-50%,-50%)
+}
+
+.repassword {
+  height:20px;
+  width: 400px;
+  position: relative; 
+  top: 54%;
   left: 37%;
   transform: translate(-50%,-50%)
 }
@@ -131,10 +180,11 @@ input[type=text] {
 input[type=password] {
   background-color: wheat;
   color: black;
-  font-family: "Lucida Console", monospace;
+  font-family: century-gothic, sans-serif;
   font-size: 18px;
   width: 450px;
   height: 35px;
+  border-radius: 5px;
 }
 
 .submit_btn {
@@ -154,7 +204,7 @@ input[type=password] {
   border: none;
   cursor: pointer;
   width: 100%;
-  font-family: "Lucida Console", monospace;
+  font-family: century-gothic, sans-serif;
   font-size: 100%;
   border-radius: 10px;
   transition: 0.5s;
@@ -185,21 +235,48 @@ a {
   transform: translate(-50%,-50%);
 }
 
-.content{
+.text1{
   font-family: 'Courier New', Courier, monospace;
   font-size: 28px;
   position: absolute;
-  top: 48%;
+  top: 37%;
+  left: 16%;
+  transform: translate(-50%,-50%);
+}
+
+.text2{
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 28px;
+  position: absolute;
+  top: 49%;
+  left: 16%;
+  transform: translate(-50%,-50%);
+}
+
+.text3{
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 28px;
+  position: absolute;
+  top: 55%;
+  left: 16%;
+  transform: translate(-50%,-50%);
+}
+
+.text4{
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 28px;
+  position: absolute;
+  top: 61%;
   left: 16%;
   transform: translate(-50%,-50%);
 }
 
 .title{
-  font-family: "Lucida Console", monospace;
+  font-family: century-gothic, sans-serif;
   font-size: 32px;
   position: absolute;
   top: 20%;
-  left: 33%;
+  left: 28%;
   transform: translate(-50%,-50%);
 }
 
@@ -210,6 +287,14 @@ a {
   transform: translate(-50%,-50%);
 }
 
+.error{
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 15;
+  position: absolute; 
+  top: 80%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+}
 
 </style>
 </head>
@@ -224,9 +309,13 @@ a {
 <form method="post">
 
   <div class="container">
-  <div class="name">
-      <input type="text" placeholder="Full name" name="name" required>
-    </div> 
+    <div class="firstname">
+      <input type="text" placeholder="First Name" name="firstname" required>
+    </div>
+    
+    <div class="lastname">
+      <input type="text" placeholder="Last Name" name="lastname" required>
+    </div>
 
     <div class="phone">
       <input type="text" placeholder="Contact No." name="phone" required>
@@ -238,6 +327,10 @@ a {
 
     <div class="password">
       <input type="password" placeholder="Password" name="password" required>
+    </div>
+
+    <div class="repassword">
+      <input type="password" placeholder="Re-Enter Password" name="repassword" required>
     </div>
     
 
@@ -253,18 +346,28 @@ a {
       <h1>Never too late to sign up</h1>
     </div>
 
-    <div class="content">
+    <div class="text1">
       <p>Full Name</p>
+    </div>
+    
+    <div class="text2">
       <p>Contact Number</p>
-      <p>Email</p>
-      <p>Password</p>
     </div>
 
+    <div class="text3">
+      <p>Email</p>
+    </div>
+
+    <div class="text4">
+      <p>Password</p>
+    </div>
+    
     <div class="cross">
       <a href = "Login.php"><img src = "images/cross.png" height = 60px></a>
     </div>
+  </div>
 
-    
+</form>    
 
 
 

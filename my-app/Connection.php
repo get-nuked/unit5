@@ -2,7 +2,7 @@
     $dbhost = "localhost" ;
     $dbuser = "root" ;
     $dbpass = "root" ;
-    $dbname = "scotts_login" ;
+    $dbname = "scotts" ;
 
     if(!$con = mysqli_connect($dbhost, $dbuser ,$dbpass ,$dbname))
     {
