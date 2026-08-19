@@ -1,6 +1,7 @@
 <?php
     function check_login($con)
     {
+        // assigns array $user_data details about the user if signed in 
         if(isset($_SESSION['id']))
         {
             $id = $_SESSION['id'];
@@ -17,7 +18,6 @@
 
         //redirect to login
         return 'False';
-        // header("Location: Login.php");
         die;
     
     };

@@ -1,341 +1,457 @@
 <?PHP
-  session_start();
-  $_SESSION;
-  $_error_message = "";
-  include("Connection.php");
-  include("Function.php");
+	session_start();
+	$_SESSION;
+	$_error_message = "";
+	include("Connection.php");
+	include("Function.php");
+	$error = "";
 
 
-  if($_SERVER["REQUEST_METHOD"] == "POST")
-  {
-    //something was posted
-    $user_name = $_POST["user_name"];
-    $password = $_POST["password"];
+	if($_SERVER["REQUEST_METHOD"] == "POST")
+	{
+		// // Check if form was submitted:
+		// if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['recaptcha_response'])) {
 
-    if(!empty($user_name) && !empty($password))
-    {
-      //read from database
-      $query = "select * from logindetails where user_name = '$user_name' limit 1";
-      $result = mysqli_query($con, $query);
+		// 	// Build POST request:
+		// 	$recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
+		// 	$recaptcha_secret = '6LciZXYpAAAAAH6etjIzDkns2rysxpEJ3hP62RWZ';
+		// 	$recaptcha_response = $_POST['recaptcha_response'];
 
-      if($result)
-      {
-        if ($result && mysqli_num_rows($result) > 0)
-          {
-              $user_data = mysqli_fetch_assoc($result);
+		// 	// Make and decode POST request:
+		// 	$recaptcha = file_get_contents($recaptcha_url . '?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
+		// 	$recaptcha = json_decode($recaptcha);
 
-              if($user_data['password'] === $password)
-              {
-                $_SESSION["id"] = $user_data["id"];
-                header("Location: Home.php");
-                die;
-              }
-          }
-      }
+		// 	// Take action based on the score returned:
+		// 	if ($recaptcha->score >= 0.5) 
+		// 	{
+				//something was posted
+				$user_name = $_POST["user_name"];
+				$password = $_POST["password"];
+				if (filter_var($user_name, FILTER_VALIDATE_EMAIL)) {
+				
+					if(!empty($user_name) && !empty($password))
+					{
+						//read from database
+						$query = "select * from logindetails where user_name = '$user_name' limit 1";
+						$result = mysqli_query($con, $query);
 
-      echo "wrong username or password";
-      header("Loaction: Home.php");
-      die;
+						if($result)
+						{
+							if ($result && mysqli_num_rows($result) > 0)
+								{
+									$user_data = mysqli_fetch_assoc($result);
+									// assigns array $user_data details about the username
 
-    } else
-    {
-      echo "wrong username or password";
-    }
-  }
+									// checks if the input is the same as the password from the database
+									if(password_verify($password, $user_data['password']))
+									{
 
+										// checks if the account has been dissabled
+										if($user_data['Disabled'] == 0)
+										{
+
+											// if the user is an admin, they will be redirected to the admin home page
+											if ($user_data['Admin'] == 1)
+											{
+
+												$_SESSION["id"] = $user_data["id"];
+												header("Location: Admin-Home.php");
+												die;
+
+											} else 
+											// else redirected to the customer home page
+											{
+
+												$_SESSION["id"] = $user_data["id"];
+												header("Location: Home.php");
+												die;
+
+											}
+
+										} else if($user_data['Disabled'] == 1)
+										{
+											$error = "account dissabled";
+										}
+
+									}else 
+									{
+										$error = "wrong username or password";
+										// header("refresh:2; url=login.php");
+									}
+								}else 
+								{
+								$error = "consider creating an account";
+							}
+						}
+
+					} else
+					{
+						echo "<div class = 'error'> fill the fields </div>";
+					}
+
+				} else 
+				{
+				$error = "$user_name is not a valid email address";
+				}
+		// 	} else 
+		// 	{
+		// 		$error = "Not verified, reCaptcha thinks you are a bot";
+		// 	}
+		// } 
+	}
+
+	// outputs any errors if found
+	echo "<div class = 'error'> $error </div>";
 ?>
 
 <html>
-  <head>
-    <link rel="stylesheet" href="https://use.typekit.net/oov2wcw.css">
-    <style>
+	<head>
 
-      body {
-        margin: 0;
-        font-family: Arial, Helvetica, sans-serif;
-        color: #191923
-      }
+		<!-- importing the font library -->
+		<link rel="stylesheet" href="https://use.typekit.net/oov2wcw.css">
 
-      .topnav {
-        background-color: #191708;
-        position: fixed;
-        top: 0;
-        width: 100%;
-        z-index: 1000;
-        box-shadow:
-        0 1px 1px hsl(0deg 0% 0% / 0.075),
-        0 2px 2px hsl(0deg 0% 0% / 0.075),
-        0 4px 4px hsl(0deg 0% 0% / 0.075),
-        0 8px 8px hsl(0deg 0% 0% / 0.075),
-        0 16px 16px hsl(0deg 0% 0% / 0.075)
-      }
+		<!-- captcha -->
+		<script src="https://www.google.com/recaptcha/api.js?render=6LciZXYpAAAAAEMRKm8WHDmiEfG4FOxw1mxiYL33"></script>
+		
+		<script>
+			function loadRecaptchaToken() {
+				grecaptcha.ready(function () {
+					grecaptcha.execute('6LciZXYpAAAAAEMRKm8WHDmiEfG4FOxw1mxiYL33', { action: 'contact' }).then(function (token) {
+						var recaptchaResponse = document.getElementById('recaptchaResponse');
+						recaptchaResponse.value = token;
+					});
+				});
+			}
+			loadRecaptchaToken();
+			setInterval(function(){loadRecaptchaToken();}, 100000);
+		</script>
 
-      .topnav a {
-        float: left;
-        color: #EEEEEE;
-        text-align: center;
-        padding: 8px 50px;
-        height: 30px;
-        line-height: 25px;
-        text-decoration: none;
-        font-size: 20px;
-        font-family: century-gothic, sans-serif;
-        transition: 0.7s;
-        display: block;
-      }
+		<title> Login </title>
+		
+		<style>
 
-      .topnav a:hover {
-        background-color: #2c290e;
-        color: white;
-        height: 35px;
-        line-height: 30px;
-        text-decoration: none;
-        font-size: 23px;
-        border-radius: 10px;
-      }
+			body {
+				margin: 0;
+				font-family: Arial, Helvetica, sans-serif;
+				color: #191923
+			}
 
-      .topnav a.active {
-        background-color: black;
-        color: white;
-      }
+			/* nav bar */
+			.topnav {
+				background-color: #191708;
+				position: fixed;
+				top: 0;
+				width: 100%;
+				z-index: 1000;
+				box-shadow:
+				0 1px 1px hsl(0deg 0% 0% / 0.075),
+				0 2px 2px hsl(0deg 0% 0% / 0.075),
+				0 4px 4px hsl(0deg 0% 0% / 0.075),
+				0 8px 8px hsl(0deg 0% 0% / 0.075),
+				0 16px 16px hsl(0deg 0% 0% / 0.075)
+			}
 
-      input[type=text], input[type=password] {
-        width: 50%;
-        padding: 12px 20px;
-        margin: 8px 0;
-        display: inline-block;
-      }
+			.topnav a {
+				float: left;
+				color: #EEEEEE;
+				text-align: center;
+				padding: 10px 50px;
+				height: 30px;
+				line-height: 25px;
+				text-decoration: none;
+				font-size: 17px;
+				font-family: century-gothic, sans-serif;
+				transition: 0.35s;
+				display: block;
+			}   
 
+			.topnav a.navlinks:hover {
+				background-color: #242216;
+				color: white;
+				margin-top:5px;
+				height: 25px;
+				line-height: 20px;
+				text-decoration: none;
+				font-size: 17px;
+				border-radius: 10px;
+			}
 
-      .container {
-        z-index: 20000;
-        margin: 100px;
-        padding: 50px;
-        background-color: #15140b;
-        height: 63%;
-        width: 18%;
-        overflow: hidden;
-        position:absolute; 
-        top: 44%;
-        left: 70%;
-        transform: translate(-50%,-50%);
-        border-radius: 35px;
-        transition: 0.4s;
-        box-shadow:
-        0 1px 1px hsl(0deg 0% 0% / 0.075),
-        0 2px 2px hsl(0deg 0% 0% / 0.075),
-        0 4px 4px hsl(0deg 0% 0% / 0.075),
-        0 8px 8px hsl(0deg 0% 0% / 0.075),
-        0 16px 16px hsl(0deg 0% 0% / 0.075)
-      }
+			.topnav a.login {
+				padding: 1px 25px ;
+				position: absolute;
+				top: 50%;
+				left: 95%;
+				transform: translate(-50%,-50%);
+				background-color: #eb5729;
+				color: white;
+				border-radius: 40px;
+			}
 
-      .container:hover {
-        height: 63.5%;
-        width: 18.25%;
-      }
+			.topnav a.login:hover {
+				padding: 2px 30px ;
+				background-color: #e03c1b;
+			}
 
-      .image{
-        position: absolute; 
-        top: 54%;
-        left: 38%;
-        transform: translate(-50%,-50%);  
-      }
+			/* password and username inputboxes */
+			input[type=text], input[type=password] {
+				width: 50%;
+				padding: 12px 20px;
+				margin: 8px 0;
+				display: inline-block;
+			}
 
-      img {
-        border-radius: 35px 0px 0px 35px;
-      }
+			/* main container */
+			.container {
+				z-index: 20000;
+				padding: 50px;
+				background-color: #191708;
+				height: 500px;
+				width: 18%;
+				overflow: hidden;
+				position:absolute; 
+				top: 50%;
+				left: 74%;
+				transform: translate(-50%,-50%);
+				border-radius: 0px 35px 35px 0px;
+				transition: 0.4s;
+			}
 
-      .username {
-        height:20px;
-        width: 600px;
-        text-align: center;
-        position: relative; 
-        top: 61%;
-        left: 50%;
-        transform: translate(-50%,-50%);
-      }
+			.container:hover {
+				width: 18.5%;
+			}
 
-      input[type=text] {
-        background-color: #19180f;
-        color:#d4d3d2;
-        font-family: "Helvetica", Sans-serif;
-        font-size: 15px;
-        border-radius: 17px;
-      }
+			.image{
+				position: absolute; 
+				top: 50%;
+				left: 38%;
+				transform: translate(-50%,-50%);  
+			}
 
-      .password {
-        height:20px;
-        width: 600px;
-        text-align: center;
-        position: relative; 
-        top: 67%;
-        left: 50%;
-        transform: translate(-50%,-50%);
-      }
+			.image img {
+				border-radius: 35px 0px 0px 35px;
+				height:600px
+			}
 
-      input[type=password] {
-        background-color: #19180f;
-        color:#d4d3d2;
-        font-family: "Helvetica", Sans-serif;
-        font-size: 15px;
-        border-radius: 17px;
-      }
+			/* username input */
+			.username {
+				height:20px;
+				width: 600px;
+				text-align: center;
+				position: relative; 
+				top: 60%;
+				left: 50%;
+				transform: translate(-50%,-50%);
+			}
 
-      .submit_btn {
-        height:20px;
-        width: 300px;
-        position: relative; 
-        top: 77%;
-        left: 50%;
-        transform: translate(-50%,-50%);
-      }
+			input[type=text] {
+				background-color: #24231a;
+				color:#d4d3d2;
+				font-family: 'Courier New', Courier, monospace;
+				font-size: 15px;
+				font-weight: bold;
+				border-radius: 17px;
+				border: none;
+			}
 
-      #button {
-        background-color: #eb5729;
-        border: 5px solid #e1ad01;
-        color: white;
-        padding: 10px 20px;
-        margin: 8px 0;
-        border: none;
-        cursor: pointer;
-        width: 300px;
-        font-family: century-gothic, sans-serif;
-        font-size: 20px;
-        border-radius: 35px;
-        transition: 1s;
-      }
+			/* password input */
+			.password {
+				height:20px;
+				width: 600px;
+				text-align: center;
+				position: relative; 
+				top: 66%;
+				left: 50%;
+				transform: translate(-50%,-50%);
+			}
 
-      #button:hover {
-        background-color: #e1ad01;
-      }
+			input[type=password] {
+				background-color: #24231a;
+				color:#d4d3d2;
+				font-family: 'Courier New', Courier, monospace;
+				font-size: 15px;
+				font-weight: bold;
+				border-radius: 17px;
+				border: none;
+			}
 
-      .signup {
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 15;
-        position: absolute; 
-        top: 87%;
-        left: 50%;
-        transform: translate(-50%,-50%);
-      }
+			/* login button */
+			.submit_btn {
+				height:20px;
+				width: 300px;
+				position: relative; 
+				top: 76%;
+				left: 50%;
+				transform: translate(-50%,-50%);
+			}
 
-      a {
-        transition: 1s;
-      }
+			#button {
+				background-color: #eb5729;
+				border: 5px solid #e1ad01;
+				color: white;
+				padding: 10px 20px;
+				margin: 8px 0;
+				border: none;
+				cursor: pointer;
+				width: 300px;
+				font-family: century-gothic, sans-serif;
+				font-size: 20px;
+				border-radius: 35px;
+				transition: 1s;
+			}
 
-      a:link {
-        color: white;
-      }
+			#button:hover {
+				background-color: #e1ad01;
+			}
 
-      a:visited {
-        color: white;
-      }
+			.signup {
+				font-family: 'Courier New', Courier, monospace;
+				font-size: 15;
+				position: absolute; 
+				top: 89%;
+				left: 50%;
+				transform: translate(-50%,-50%);
+			}
 
-      a:hover {
-        color: #e1ad01;
-      }
+			a {
+				transition: 1s;
+			}
 
-      a:active {
-        color: white;
-      }
+			a:link {
+				color: white;
+			}
 
-      .logo{
-        position: absolute; 
-        top: 38%;
-        left: 50%;
-        transform: translate(-50%,-50%);
-      }
+			a:visited {
+				color: white;
+			}
 
-      .welcometext{
-        position: absolute; 
-        top: 30%;
-        left: 75%;
-        transform: translate(-50%,-50%);
-        color: #d4d3d2;
-        font-family: century-gothic, sans-serif;
-        font-size: 40px;
-        z-index: 400000;
-      }
+			a:hover {
+				color: #e1ad01;
+			}
 
-      .filter{
-        height:100%;
-        width:100%;
-        background-color: black;
-        z-index: 0;
-        opacity: 0.98;
-        background: linear-gradient(-45deg, #332a1f, #24201a, #24231a, #23241a);
-        background-size: 400% 400%;
-        animation: gradient 10s ease infinite;
-        height: 100vh;
-      }
+			a:active {
+				color: white;
+			}
 
-      body {
-        height: 100%;
-        overflow-y: hidden;
-      }
+			/* welcome text and logo */
+			.logo{
+				position: absolute; 
+				top: 38%;
+				left: 50%;
+				transform: translate(-50%,-50%);
+			}
 
-      @keyframes gradient {
-        0% {
-          background-position: 0% 50%;
-        }
+			.welcometext{
+				position: absolute; 
+				top: 30%;
+				left: 74%;
+				transform: translate(-50%,-50%);
+				color: wheat;
+				font-family: century-gothic, sans-serif;
+				font-size: 50px;
+				z-index: 400000;
+				font-weight: bold;
+			}
+
+			/* background */
+			.filter{
+				height:100%;
+				width:100%;
+				background-color: black;
+				z-index: 0;
+				opacity: 0.98;
+				background: linear-gradient(-45deg, #332a1f, #24201a, #24231a, #23241a);
+				background-size: 400% 400%;
+				animation: gradient 10s ease infinite;
+				height: 100vh;
+			}
+
+			body {
+				height: 100%;
+				overflow-y: hidden;
+			}
+
+			@keyframes gradient {
+				0% {
+					background-position: 0% 50%;
+				}
  
-        50% {
-          background-position: 100% 50%;
-        }
+				50% {
+					background-position: 100% 50%;
+				}
  
-        100% {
-          background-position: 0% 50%;
-        }
-      }
+				100% {
+					background-position: 0% 50%;
+				}
+			}
 
-    </style>
-  </head>
+			/* login error message */
+			.error {
+				position: absolute; 
+				top: 52%;
+				left: 74%;
+				transform: translate(-50%,-50%);
+				color: #d4d3d2;
+				font-family: century-gothic, sans-serif;
+				font-size: 15px;
+				z-index: 400000;
+			}
 
-  <body>
+		</style>
+	</head>
 
-    <body style="background-image: url('https://graphicriver.img.customer.envatousercontent.com/files/246486475/preview.jpg?auto=compress%2Cformat&q=80&fit=crop&crop=top&max-h=8000&max-w=590&s=60996981f30a0d18587856b07f400b4c')">
+	<body>
 
-    <div class = filter></div>
+		<!-- setting background image -->
+		<body style="background-image: url('https://graphicriver.img.customer.envatousercontent.com/files/246486475/preview.jpg?auto=compress%2Cformat&q=80&fit=crop&crop=top&max-h=8000&max-w=590&s=60996981f30a0d18587856b07f400b4c')">
 
-    <div class="topnav">
-      <a href="Home.php"><img src="images\SCOTT'S MOTs-logos_simple.png" height=35px></a>
-      <a href="About.php">About</a>
-      <a href="ContactUs.php">Contact Us</a>
-      <a href="MOT.php">Book an MOT!</a>
-    </div>
+		<div class = filter></div>
 
-    <form method="post">
-      <div class="container">
-        <div class="username">
-          <input id = "text" type="text" placeholder="Username" name="user_name" required>
-        </div> 
+		<!-- nav bar -->
+		<div class="topnav">
+			<a href="Home.php"><img src="images\SCOTT'S MOTs-logos_simple.png" height=35px></a>
+			<a class = "navlinks" href="About.php">About</a>
+			<a class = "navlinks" href="ContactUs.php">Contact Us</a>
+			<a class = "navlinks" href="MOT.php">Book an MOT!</a>
+		</div>
 
-        <div class="password">
-          <input id = "text" type="password" placeholder="Password" name="password" required>
-        </div>
-  
-        <div class="submit_btn">
-          <input id = "button" type="submit" value = "Login">
-        </div> 
-    
-        <div class="logo">
-          <img src="images\SCOTT'S MOTs-logos_simple2.png" width = 150>
-        </div>
+		<!-- login form -->
+		<form method="post">
+			<div class="container">
+				<div class="username">
+					<input id = "text" type="text" placeholder="Username" name="user_name" required>
+				</div> 
 
-        <div class="signup">
-          <a href="SignUp.php">Create an account</a>
-        </div>
-      </div>
-    </form>
+				<div class="password">
+					<input id = "text" type="password" placeholder="Password" name="password" required>
+				</div>
 
-    <div class = "welcometext">
-      <p>hello there!</p>
-    </div>
+				<!-- recaptcha hidden input -->
+				<input type="hidden" name="recaptcha_response" id="recaptchaResponse">
+	
+				<div class="submit_btn">
+					<input id = "button" type="submit" value = "Login">
+				</div> 
+		
+				<div class="logo">
+					<img src="images\SCOTT'S MOTs-logos_simple2.png" width = 150>
+				</div>
 
-    <div class="d-flex flex-column justify-content-center w-100 h-100"></div>
+				<!-- signup link  -->
+				<div class="signup">
+					<a href="SignUp.php">Create an account</a>
+				</div>
+			</div>
+		</form>
 
-    <div class = "image">
-      <img src = "images\test2.jpg" height = 600>
-    </div>
-  
-  </body>
+		<div class = "welcometext">
+			<p>hello there!</p>
+		</div>
+
+		<div class="d-flex flex-column justify-content-center w-100 h-100"></div>
+
+		<div class = "image">
+			<img src = "images\test2.jpg" height = 600px>
+		</div>
+	
+	</body>
 </html>
